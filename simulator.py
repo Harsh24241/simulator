@@ -45,8 +45,7 @@ class Rtype:
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
-        if(registers[rs1]<registers[rs2]):
-            registers[rd]=1
+        registers[rd] = 1 if registers[rs1] < registers[rs2] else 0       #updated  
         
     def srl(self):
         rd=int(self.instruction[20:25],2)
@@ -249,4 +248,3 @@ while(pc[0]!=len(l)):
     
     pc_track.append(pc[0]*4)
 print(pc_track)
-        
