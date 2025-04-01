@@ -26,44 +26,44 @@ class Rtype:
     
     def check(self):
         #opcode+f3+f7
-        a=self.instruction[-7:] + self.instruction[-15:-12] + self.instruction[-32:-25] 
+        a=self.instruction[25:32] + self.instruction[17:20] + self.instruction[:7] 
         return self.operand.get(a)
     
     def add(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         registers[rd]=registers[rs1]+registers[rs2]
     
     def sub(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         registers[rd]=registers[rs1]-registers[rs2]
 
     def slt(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         if(registers[rs1]<registers[rs2]):
             registers[rd]=1
         
     def srl(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         registers[rd]=registers[rs1]>>registers[rs2]
 
     def or_isa(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         registers[rd]=registers[rs1] | registers[rs2]
 
     def and_isa(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         registers[rd]=registers[rs1] & registers[rs2]
     
     
@@ -88,9 +88,9 @@ class Rtype:
         print(4*pc[0]," ".join([str(x) for x in registers]))
 
 class Itype:
-    operand={"0000011010":"lw",
-            "0010011000":"addi",
-            "1100111000":"jalr"}
+    operand={"0000011":"lw",
+            "0010011":"addi",
+            "1100111":"jalr"}
 
     def __init__(self,instruction):
         self.instruction=instruction
@@ -98,28 +98,28 @@ class Itype:
     
     def check(self):
         #opcode+f3+f7
-        a=self.instruction[-7:] + self.instruction[-15:-12]
+        a=self.instruction[25:32]
         return self.operand.get(a)
     
     def lw(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
         registers[rd]=registers[rs1]+self.imm
        # print("immediate:",self.imm)
         pc[0]+=1
     
     def addi(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
         registers[rd]=registers[rs1]+self.imm
         #print("immediate:",self.imm)
         pc[0]+=1
 
     def jalr(self):
-        rd=int(self.instruction[-12:-7],2)
-        rs1=int(self.instruction[-20:-15],2)
+        rd=int(self.instruction[20:25],2)
+        rs1=int(self.instruction[12:17],2)
         registers[rd]=4*(pc[0]+1)
-        pc[0]=(registers[rs1]+self.imm)//4
+        pc[0]=(registers[6]+self.imm)//4
     
     def update(self,registers):
         a=self.check()
@@ -144,22 +144,22 @@ class Btype:
 
     def __init__(self,instruction):
         self.instruction=instruction
-        self.imm=binary_convert(self.instruction[0]+self.instruction[-8]+self.instruction[1:7]+self.instruction[-12:-8])
+        self.imm=binary_convert(self.instruction[0]+self.instruction[24]+self.instruction[1:7]+self.instruction[20:24])
     def check(self):
-        a=self.instruction[-7:] + self.instruction[-15:-12]
+        a=self.instruction[25:32] + self.instruction[17:20]
         return self.operand.get(a)
     
     def bne(self):
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         if(registers[rs1]!=registers[rs2]):
             pc[0]=pc[0]+self.imm//4
         else:
             pc[0]+=1
     
     def beq(self):
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         if(rs1==0 and rs2==0 and self.imm==0):
             pc[0]+=1
         elif(registers[rs1]==registers[rs2]):
@@ -168,8 +168,8 @@ class Btype:
             pc[0]+=1
 
     def blt(self):
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         if(registers[rs1]<registers[rs2]):
             pc[0]=pc[0]+self.imm//4
         else:
@@ -192,9 +192,9 @@ class Stype:
     def __init__(self,instruction):
         self.instruction=instruction
     def sw(self):
-        imm=binary_convert(self.instruction[:7]+self.instruction[-12:-7])
-        rs1=int(self.instruction[-20:-15],2)
-        rs2=int(self.instruction[-25:-20],2)
+        imm=binary_convert(self.instruction[:7]+self.instruction[20:25])
+        rs1=int(self.instruction[12:17],2)
+        rs2=int(self.instruction[7:12],2)
         #print("register:",rs1," value:",registers[rs1],"register:",rs2," value:",registers[rs2],"immediate:",imm)
         registers[rs2]=registers[rs1]+imm
         pc[0]=pc[0]+1
@@ -207,9 +207,9 @@ class Jtype:
     def __init__(self,instruction):
         self.instruction=instruction
     def jal(self):
-        rd=int(self.instruction[-12:-7],2)
+        rd=int(self.instruction[20:25],2)
         registers[rd]=4*(pc[0]+1)
-        rearr=self.instruction[0]+self.instruction[12:20]+self.instruction[1:12]
+        rearr=self.instruction[0]+self.instruction[12:20]+self.instruction[11]+self.instruction[1:11]
         pc[0]=pc[0]+binary_convert(rearr)//4
     def output(self):
         self.jal()
@@ -221,7 +221,7 @@ def input_process(filename):
     return l
 
 def identity(s):
-    op=s[-7:]
+    op=s[25:32]
     return opcodes.get(op)
 
 f=input("enter file name:")
@@ -250,4 +250,3 @@ while(pc[0]!=len(l)):
     pc_track.append(pc[0]*4)
 print(pc_track)
         
-
