@@ -3,9 +3,44 @@ import sys
 registers=[0]*32
 registers[2]=380
 pc=[0]
-pc_track=[]
+trace=[]
+memory={
+"0x00010000":0,
+"0x00010004":0,
+"0x00010008":0,
+"0x0001000C":0,
+"0x00010010":0,
+"0x00010014":0,
+"0x00010018":0,
+"0x0001001C":0,
+"0x00010020":0,
+"0x00010024":0,
+"0x00010028":0,
+"0x0001002C":0,
+"0x00010030":0,
+"0x00010034":0,
+"0x00010038":0,
+"0x0001003C":0,
+"0x00010040":0,
+"0x00010044":0,
+"0x00010048":0,
+"0x0001004C":0,
+"0x00010050":0,
+"0x00010054":0,
+"0x00010058":0,
+"0x0001005C":0,
+"0x00010060":0,
+"0x00010064":0,
+"0x00010068":0,
+"0x0001006C":0,
+"0x00010070":0,
+"0x00010074":0,
+"0x00010078":0,
+"0x0001007C":0
+}
 
-ans=[]
+
+
 def binary_convert(s):
     return int(s,2)-(1<<len(s))if s[0]=='1' else int(s,2)
 opcodes={
@@ -17,12 +52,22 @@ opcodes={
     "1100011": "B", 
     "1101111": "J", 
 }
-
 def negto():
     for i in range(0,32):
         if registers[i]<0:
             bin_32=format(registers[i] & 0xFFFFFFFF,'032b')
             registers[i]=int(bin_32,2)
+
+
+
+
+
+
+
+
+
+
+
 class Rtype:
     isa={"opcode":[0,6], "f7":[25,31] , "s1":[7,11] , "s2":[15,19] , "s3" :[20,24] , "f3":[12,14]}
     operand={"01100110000000000":"add",
@@ -95,11 +140,13 @@ class Rtype:
     
     def output(self):
         self.update(registers)
+        pc[0]+=4
         registers[0]=0
         negto()
-        pc[0]=pc[0]+1
-        ans.append(str(4*pc[0])+" "+" ".join([str(x) for x in registers]))
-        #print(4*pc[0]," ".join([str(x) for x in registers]))
+        trace.append(str(pc[0])+" "+" ".join([str(x) for x in registers]))
+       
+
+
 
 class Itype:
     operand={"0000011":"lw",
@@ -119,21 +166,21 @@ class Itype:
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
         registers[rd]=registers[rs1]+self.imm
-       # print("immediate:",self.imm)
-        pc[0]+=1
+       
     
     def addi(self):
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
         registers[rd]=registers[rs1]+self.imm
-        #print("immediate:",self.imm)
-        pc[0]+=1
+        pc[0]+=4
+        
+        
 
     def jalr(self):
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
-        registers[rd]=4*(pc[0]+1)
-        pc[0]=(registers[6]+self.imm)//4
+        registers[rd]=4+pc[0]
+        pc[0]=rs1+self.imm
     
     def update(self,registers):
         a=self.check()
@@ -149,9 +196,12 @@ class Itype:
         self.update(registers)
         negto()
         registers[0]=0
-        ans.append(str(4*pc[0])+" "+" ".join([str(x) for x in registers]))
-        #ans+=str(4*pc[0])+" "+" ".join([str(x) for x in registers])+"\n"
-        #print(4*pc[0]," ".join([str(x) for x in registers]))
+        trace.append(str(pc[0])+" "+" ".join([str(x) for x in registers]))
+       
+       
+
+
+
 
 
 class Btype:
@@ -171,44 +221,48 @@ class Btype:
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
         if(registers[rs1]!=registers[rs2]):
-            pc[0]=pc[0]+self.imm//4
+           pass
         else:
-            pc[0]+=1
+            pass
     
     def beq(self):
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
         if(rs1==0 and rs2==0 and self.imm==0):
-            pc[0]+=1
+           pc[0]=len(l)*4
         elif(registers[rs1]==registers[rs2]):
-            pc[0]=pc[0]+self.imm//4 
-        else:
-            pc[0]+=1
+           pass
 
-    def blt(self):
-        rs1=int(self.instruction[12:17],2)
-        rs2=int(self.instruction[7:12],2)
-        if(registers[rs1]<registers[rs2]):
-            pc[0]=pc[0]+self.imm//4
         else:
-            pc[0]+=1
+           pass
+
+    # def blt(self):
+    #     rs1=int(self.instruction[12:17],2)
+    #     rs2=int(self.instruction[7:12],2)
+    #     if(registers[rs1]<registers[rs2]):
+    #         pass
+    #     else:
+    #         pass
         
     
     def update(self,registers):
         a=self.check()
         if(a=="bne"):
             self.bne()
-        elif(a=="blt"):
-            self.blt()
+        # elif(a=="blt"):
+        #     self.blt()
         elif(a=="beq"):
             self.beq() 
     def output(self):
         self.update(registers)
         registers[0]=0
         negto()
-        ans.append(str(4*pc[0])+" "+" ".join([str(x) for x in registers]))
-        #ans+=str(4*pc[0])+" "+" ".join([str(x) for x in registers])+"\n"
-        #print(4*pc[0]," ".join([str(x) for x in registers]))
+        trace.append(str(pc[0])+" "+" ".join([str(x) for x in registers]))
+        
+
+
+
+
 
 class Stype:
     def __init__(self,instruction):
@@ -217,76 +271,93 @@ class Stype:
         imm=binary_convert(self.instruction[:7]+self.instruction[20:25])
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
-        #print("register:",rs1," value:",registers[rs1],"register:",rs2," value:",registers[rs2],"immediate:",imm)
+        
         registers[rs2]=registers[rs1]+imm
-        pc[0]=pc[0]+1
+        trace.append(str(pc[0])+" "+" ".join([str(x) for x in registers]))
+       
+        
     def output(self):
         self.sw()
         registers[0]=0
         negto()
-        ans.append(str(4*pc[0])+" "+" ".join([str(x) for x in registers]))
-        #ans+=str(4*pc[0])+" "+" ".join([str(x) for x in registers])+"\n"
-        #print(4*pc[0]," ".join([str(x) for x in registers]))
+    
+        
+
 
 class Jtype:
-    #only one instruction jal so no need to write unnecessary code
+   
     def __init__(self,instruction):
         self.instruction=instruction
     def jal(self):
         rd=int(self.instruction[20:25],2)
-        registers[rd]=4*(pc[0]+1)
+        registers[rd]=4
         rearr=self.instruction[0]+self.instruction[12:20]+self.instruction[11]+self.instruction[1:11]
-        pc[0]=pc[0]+binary_convert(rearr)//4
+      
     def output(self):
         self.jal()
         registers[0]=0
         negto()
-        ans.append(str(4*pc[0])+" "+" ".join([str(x) for x in registers]))
-        #ans+=str(4*pc[0])+" "+" ".join([str(x) for x in registers])+"\n"
-        #print(4*pc[0]," ".join([str(x) for x in registers]))
-    
+        trace.append(str(pc[0])+" "+" ".join([str(x) for x in registers]))
+       
+        
+        
+
+
+
+
 def input_process(filename):
     with open(filename,"r") as f:
         l=[x for x in f.read().split("\n") if x.strip()]
     return l
 
+
+
+
 def identity(s):
     op=s[25:32]
     return opcodes.get(op)
+
 
 f=sys.argv[1]
 output_file=sys.argv[2]
 l=input_process(f)
 
-while(pc[0]!=len(l)):
-    #print(identity(l[pc[0]]))
-    if(identity(l[pc[0]])=="R"):
-        a=Rtype(l[pc[0]])
+
+
+
+i=0
+while i<len(l)-1:
+   
+    if(identity(l[i])=="R"):
+        a=Rtype(l[i])
         a.output()
         
-    elif(identity(l[pc[0]])=="J"):
-        a=Jtype(l[pc[0]])
+    elif(identity(l[i])=="J"):
+        a=Jtype(l[i])
         a.output()
        
-    elif(identity(l[pc[0]])=="S"):
-        a=Stype(l[pc[0]])
+    elif(identity(l[i])=="S"):
+        a=Stype(l[i])
         a.output()
-    elif(identity(l[pc[0]])=="B"):
-        a=Btype(l[pc[0]])
+    elif(identity(l[i])=="B"):
+        a=Btype(l[i])
         a.output()
-    elif(identity(l[pc[0]])=="I"):
-        a=Itype(l[pc[0]])
+    elif(identity(l[i])=="I"):
+        a=Itype(l[i])
         a.output()
     
-    pc_track.append(pc[0]*4)
-for i in range(len(ans)):
-    ans[i]=" ".join(["0b"+format(int(x) & 0xFFFFFFFF,'032b') for x in ans[i].split()])
+    i=pc[0]//4 -1
+trace[-1]=str(pc[0]-4)+" "+" ".join([str(x) for x in registers])
 
-# for i in ans:
-#     print(i)
+for i in range(len(trace)):
+    trace[i]=" ".join(["0b"+format(int(x) & 0xFFFFFFFF,'032b') for x in trace[i].split()])
+
+for i in memory:
+    memory[i]="0b"+format(memory[i] & 0xFFFFFFFF,'032b')
 
 with open(output_file,'w') as file:
-    for item in ans:
+    for item in trace:
         file.write(item+'\n')
-#print(pc_track)
-        
+    for item in memory:
+        file.write(item+":"+memory[item]+'\n')
+
