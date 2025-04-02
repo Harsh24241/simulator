@@ -1,3 +1,5 @@
+import sys
+
 registers=[0]*32
 registers[2]=380
 pc=[0]
@@ -252,7 +254,8 @@ def identity(s):
     op=s[25:32]
     return opcodes.get(op)
 
-f=input("enter file name:")
+f=sys.argv[1]
+output_file=sys.argv[2]
 l=input_process(f)
 
 while(pc[0]!=len(l)):
@@ -279,7 +282,10 @@ while(pc[0]!=len(l)):
 for i in range(len(ans)):
     ans[i]=" ".join(["0b"+format(int(x) & 0xFFFFFFFF,'032b') for x in ans[i].split()])
 
-with open("output.txt",'w') as file:
+# for i in ans:
+#     print(i)
+
+with open(output_file,'w') as file:
     for item in ans:
         file.write(item+'\n')
 #print(pc_track)
