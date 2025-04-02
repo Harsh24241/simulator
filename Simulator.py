@@ -196,7 +196,9 @@ class Itype:
         self.update(registers)
         negto()
         registers[0]=0
+        #print("immediate :",self.imm,"at index:",i)
         trace.append(str(pc[0])+" "+" ".join([str(x) for x in registers]))
+        #print("trace:",trace[i])
        
        
 
@@ -212,7 +214,9 @@ class Btype:
 
     def __init__(self,instruction):
         self.instruction=instruction
-        self.imm=binary_convert(self.instruction[0]+self.instruction[24]+self.instruction[1:7]+self.instruction[20:24])
+        self.imm=self.instruction[0]+self.instruction[24]+self.instruction[1:7]+self.instruction[20:24]
+        #self.imm=instruction>>20
+        #print("value of immediate:",2*binary_convert(self.imm),"instruction index:",i)
     def check(self):
         a=self.instruction[25:32] + self.instruction[17:20]
         return self.operand.get(a)
@@ -221,20 +225,21 @@ class Btype:
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
         if(registers[rs1]!=registers[rs2]):
-           pass
+           #pc[0]+=binary_convert(self.imm[:-1]+'0')
+           pc[0]+=2*binary_convert(self.imm)-4
         else:
-            pass
+            pc[0]+=4
     
     def beq(self):
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
-        if(rs1==0 and rs2==0 and self.imm==0):
+        if(rs1==0 and rs2==0 and binary_convert(self.imm)==0):
            pc[0]=len(l)*4
         elif(registers[rs1]==registers[rs2]):
-           pass
+           pc[0]+=2*binary_convert(self.imm)-4
 
         else:
-           pass
+           pc[0]+=4
 
     # def blt(self):
     #     rs1=int(self.instruction[12:17],2)
@@ -317,7 +322,7 @@ def identity(s):
     op=s[25:32]
     return opcodes.get(op)
 
-
+#f=input("enter filename:")
 f=sys.argv[1]
 output_file=sys.argv[2]
 l=input_process(f)
@@ -326,7 +331,8 @@ l=input_process(f)
 
 
 i=0
-while i<len(l)-1:
+limit=0
+while pc[0]<4*(len(l)-1) and limit<100:
    
     if(identity(l[i])=="R"):
         a=Rtype(l[i])
@@ -345,9 +351,9 @@ while i<len(l)-1:
     elif(identity(l[i])=="I"):
         a=Itype(l[i])
         a.output()
-    
-    i=pc[0]//4 -1
-trace[-1]=str(pc[0]-4)+" "+" ".join([str(x) for x in registers])
+    i=pc[0]//4
+    limit+=1
+trace.append(trace[-1])
 
 for i in range(len(trace)):
     trace[i]=" ".join(["0b"+format(int(x) & 0xFFFFFFFF,'032b') for x in trace[i].split()])
@@ -361,3 +367,7 @@ with open(output_file,'w') as file:
     for item in memory:
         file.write(item+":"+memory[item]+'\n')
 
+# for i in trace:
+#     print(i)
+# for i in memory:
+#     print(i,":",memory[i])
