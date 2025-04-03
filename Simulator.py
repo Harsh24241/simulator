@@ -38,6 +38,7 @@ memory={
 "0x00010078":0,
 "0x0001007C":0
 }
+stack=list(memory.keys())
 
 
 
@@ -167,8 +168,10 @@ class Itype:
     def lw(self):
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
-        a=format(registers[rs1]+self.imm,"#010x")
+        #a=format(registers[rs1]+self.imm,"#010x")
         #if a in memory:
+       
+        a=format(registers[rs1]+self.imm,"#010x")
         registers[rd]=memory[a]
         pc[0]+=4
        
@@ -185,10 +188,11 @@ class Itype:
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
         registers[rd]=4+pc[0]
+        registers[0]=0
         #print("index:",i)
         #print("pc",pc[0],"rs1",rs1)
         pc[0]=registers[rs1]+self.imm_jalr
-        #print("pc",pc[0],"immediate for jalr:",self.imm_jalr,"immediate for all:",self.imm)
+        #print("pc",pc[0],"immediate for jalr:",self.imm_jalr,"immediate for all:",self.imm,"rs1:",rs1,"value of rs1:",registers[rs1])
     
     def update(self,registers):
         a=self.check()
@@ -286,6 +290,7 @@ class Stype:
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
         a=format(registers[rs1]+imm,"#010x")
+        #a=format(registers[rs1]+imm,"#010x")
         #print("instruction",i,"pc",pc[0],"memory address",a)
         #if a in memory:
         memory[a]=registers[rs2]
@@ -336,7 +341,7 @@ def identity(s):
     op=s[25:32]
     return opcodes.get(op)
 
-# f=input("enter filename:")
+#f=input("enter filename:")
 f=sys.argv[1]
 output_file=sys.argv[2]
 l=input_process(f)
@@ -378,10 +383,10 @@ for i in memory:
 with open(output_file,'w') as file:
     for item in trace:
         file.write(item+'\n')
-    for item in memory:
+    for item in stack:
         file.write(item+":"+memory[item]+'\n')
 
 # for i in trace:
 #     print(i)
-# for i in memory:
+# for i in stack:
 #     print(i,":",memory[i])
