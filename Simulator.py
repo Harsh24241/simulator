@@ -156,6 +156,8 @@ class Itype:
     def __init__(self,instruction):
         self.instruction=instruction
         self.imm=binary_convert(instruction[:12])
+        self.imm_jalr=binary_convert(instruction[:11]+'0')
+        
     
     def check(self):
         #opcode+f3+f7
@@ -166,6 +168,7 @@ class Itype:
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
         a=format(registers[rs1]+self.imm,"#010x")
+        #if a in memory:
         registers[rd]=memory[a]
         pc[0]+=4
        
@@ -182,11 +185,14 @@ class Itype:
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
         registers[rd]=4+pc[0]
-        pc[0]=rs1+self.imm
+        #print("index:",i)
+        #print("pc",pc[0],"rs1",rs1)
+        pc[0]=registers[rs1]+self.imm_jalr
+        #print("pc",pc[0],"immediate for jalr:",self.imm_jalr,"immediate for all:",self.imm)
     
     def update(self,registers):
         a=self.check()
-        #print(a)
+        #print("hi")
         if(a=="lw"):
             self.lw()
         elif(a=="addi"):
@@ -281,6 +287,7 @@ class Stype:
         rs2=int(self.instruction[7:12],2)
         a=format(registers[rs1]+imm,"#010x")
         #print("instruction",i,"pc",pc[0],"memory address",a)
+        #if a in memory:
         memory[a]=registers[rs2]
         pc[0]+=4
         
@@ -301,9 +308,9 @@ class Jtype:
         self.instruction=instruction
     def jal(self):
         rd=int(self.instruction[20:25],2)
-        registers[rd]=4
+        registers[rd]=4+pc[0]
         rearr=self.instruction[0]+self.instruction[12:20]+self.instruction[11]+self.instruction[1:11]
-        pc[0]+=binary_convert(rearr)<<1
+        pc[0]+=binary_convert(rearr[:-1]+'0')<<1
       
     def output(self):
         self.jal()
