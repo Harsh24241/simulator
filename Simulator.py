@@ -165,7 +165,9 @@ class Itype:
     def lw(self):
         rd=int(self.instruction[20:25],2)
         rs1=int(self.instruction[12:17],2)
-        registers[rd]=registers[rs1]+self.imm
+        a=format(registers[rs1]+self.imm,"#010x")
+        registers[rd]=memory[a]
+        pc[0]+=4
        
     
     def addi(self):
@@ -277,8 +279,11 @@ class Stype:
         imm=binary_convert(self.instruction[:7]+self.instruction[20:25])
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
+        a=format(registers[rs1]+imm,"#010x")
+        #print("instruction",i,"pc",pc[0],"memory address",a)
+        memory[a]=registers[rs2]
+        pc[0]+=4
         
-        registers[rs2]=registers[rs1]+imm
         trace.append(str(pc[0])+" "+" ".join([str(x) for x in registers]))
        
         
@@ -298,7 +303,7 @@ class Jtype:
         rd=int(self.instruction[20:25],2)
         registers[rd]=4
         rearr=self.instruction[0]+self.instruction[12:20]+self.instruction[11]+self.instruction[1:11]
-        pc[0]+=binary_convert(rearr)
+        pc[0]+=binary_convert(rearr)<<1
       
     def output(self):
         self.jal()
@@ -324,7 +329,7 @@ def identity(s):
     op=s[25:32]
     return opcodes.get(op)
 
-#f=input("enter filename:")
+# f=input("enter filename:")
 f=sys.argv[1]
 output_file=sys.argv[2]
 l=input_process(f)
