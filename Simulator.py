@@ -226,7 +226,7 @@ class Btype:
         rs2=int(self.instruction[7:12],2)
         if(registers[rs1]!=registers[rs2]):
            #pc[0]+=binary_convert(self.imm[:-1]+'0')
-           pc[0]+=2*binary_convert(self.imm)-4
+           pc[0]+=binary_convert(self.imm)<<1
         else:
             pc[0]+=4
     
@@ -234,9 +234,10 @@ class Btype:
         rs1=int(self.instruction[12:17],2)
         rs2=int(self.instruction[7:12],2)
         if(rs1==0 and rs2==0 and binary_convert(self.imm)==0):
-           pc[0]=len(l)*4
+           #pc[0]=len(l)*4
+           pc[0]+=4
         elif(registers[rs1]==registers[rs2]):
-           pc[0]+=2*binary_convert(self.imm)-4
+           pc[0]+=binary_convert(self.imm)<<1
 
         else:
            pc[0]+=4
@@ -297,6 +298,7 @@ class Jtype:
         rd=int(self.instruction[20:25],2)
         registers[rd]=4
         rearr=self.instruction[0]+self.instruction[12:20]+self.instruction[11]+self.instruction[1:11]
+        pc[0]+=binary_convert(rearr)
       
     def output(self):
         self.jal()
